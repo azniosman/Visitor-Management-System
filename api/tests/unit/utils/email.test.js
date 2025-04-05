@@ -99,7 +99,9 @@ describe("Email Utility", () => {
       await sendWelcomeEmail(user);
 
       // Assert
-      expect(sendEmail).toHaveBeenCalledWith({
+      expect(
+        require("../../../src/utils/email").sendEmail
+      ).toHaveBeenCalledWith({
         to: "user@example.com",
         subject: "Welcome to Elisa Secure Access",
         text: expect.stringContaining(
@@ -134,7 +136,9 @@ describe("Email Utility", () => {
       await sendNotificationEmail(options);
 
       // Assert
-      expect(sendEmail).toHaveBeenCalledWith({
+      expect(
+        require("../../../src/utils/email").sendEmail
+      ).toHaveBeenCalledWith({
         to: "user@example.com",
         subject: "Test Notification",
         text: "This is a test notification",

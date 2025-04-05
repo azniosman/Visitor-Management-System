@@ -1,12 +1,19 @@
 const Visitor = require("../models/Visitor");
-const AWS = require("aws-sdk");
+const {
+  RekognitionClient,
+  DetectFacesCommand,
+} = require("@aws-sdk/client-rekognition");
+const {
+  ComprehendClient,
+  DetectSentimentCommand,
+} = require("@aws-sdk/client-comprehend");
 
 // Initialize AWS services
-const rekognition = new AWS.Rekognition({
+const rekognitionClient = new RekognitionClient({
   region: process.env.AWS_REGION || "us-east-1",
 });
 
-const comprehend = new AWS.Comprehend({
+const comprehendClient = new ComprehendClient({
   region: process.env.AWS_REGION || "us-east-1",
 });
 
@@ -49,14 +56,12 @@ exports.createVisitor = async (req, res) => {
     // If notes are provided, analyze them with AWS Comprehend
     if (req.body.notes) {
       try {
-        const sentimentParams = {
+        const command = new DetectSentimentCommand({
           Text: req.body.notes,
           LanguageCode: "en",
-        };
+        });
 
-        const sentimentResult = await comprehend
-          .detectSentiment(sentimentParams)
-          .promise();
+        const sentimentResult = await comprehendClient.send(command);
 
         visitor.aiAnalysis = {
           sentiment: sentimentResult,
@@ -163,14 +168,14 @@ exports.analyzeVisitorPhoto = async (req, res) => {
       return res.status(400).json({ message: "No photo provided" });
     }
 
-    const params = {
+    const command = new DetectFacesCommand({
       Image: {
         Bytes: req.file.buffer,
       },
       Attributes: ["ALL"],
-    };
+    });
 
-    const rekognitionResult = await rekognition.detectFaces(params).promise();
+    const rekognitionResult = await rekognitionClient.send(command);
 
     res.status(200).json({
       facesDetected: rekognitionResult.FaceDetails.length,

@@ -1,21 +1,23 @@
 // AWS Rekognition service for facial recognition and ID verification
-
-import AWS from 'aws-sdk';
+import {
+  RekognitionClient,
+  CompareFacesCommand,
+  DetectFacesCommand,
+  DetectTextCommand,
+  AnalyzeIDCommand,
+  DetectCustomLabelsCommand,
+} from "@aws-sdk/client-rekognition";
 
 // Initialize the AWS SDK with your credentials
 // In a production environment, these should be stored securely and not in the code
-const initializeAWS = () => {
-  AWS.config.update({
-    region: import.meta.env.VITE_AWS_REGION || 'us-east-1',
-    accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
-    secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY
-  });
-};
-
-// Create a Rekognition service object
 const getRekognitionClient = () => {
-  initializeAWS();
-  return new AWS.Rekognition();
+  return new RekognitionClient({
+    region: import.meta.env.VITE_AWS_REGION || "us-east-1",
+    credentials: {
+      accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
+      secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY,
+    },
+  });
 };
 
 /**
@@ -26,21 +28,21 @@ const getRekognitionClient = () => {
  */
 export const compareFaces = async (sourceImageBuffer, targetImageBuffer) => {
   try {
-    const rekognition = getRekognitionClient();
-    
-    const params = {
+    const client = getRekognitionClient();
+
+    const command = new CompareFacesCommand({
       SourceImage: {
-        Bytes: sourceImageBuffer
+        Bytes: sourceImageBuffer,
       },
       TargetImage: {
-        Bytes: targetImageBuffer
+        Bytes: targetImageBuffer,
       },
-      SimilarityThreshold: 70 // Minimum similarity threshold (0-100)
-    };
-    
-    return await rekognition.compareFaces(params).promise();
+      SimilarityThreshold: 70, // Minimum similarity threshold (0-100)
+    });
+
+    return await client.send(command);
   } catch (error) {
-    console.error('Error comparing faces:', error);
+    console.error("Error comparing faces:", error);
     throw error;
   }
 };
@@ -52,18 +54,18 @@ export const compareFaces = async (sourceImageBuffer, targetImageBuffer) => {
  */
 export const detectFaces = async (imageBuffer) => {
   try {
-    const rekognition = getRekognitionClient();
-    
-    const params = {
+    const client = getRekognitionClient();
+
+    const command = new DetectFacesCommand({
       Image: {
-        Bytes: imageBuffer
+        Bytes: imageBuffer,
       },
-      Attributes: ['ALL'] // Return all facial attributes
-    };
-    
-    return await rekognition.detectFaces(params).promise();
+      Attributes: ["ALL"], // Return all facial attributes
+    });
+
+    return await client.send(command);
   } catch (error) {
-    console.error('Error detecting faces:', error);
+    console.error("Error detecting faces:", error);
     throw error;
   }
 };
@@ -75,26 +77,33 @@ export const detectFaces = async (imageBuffer) => {
  */
 export const analyzeIDDocument = async (imageBuffer) => {
   try {
-    const rekognition = getRekognitionClient();
-    
-    const params = {
-      Image: {
-        Bytes: imageBuffer
-      }
-    };
-    
+    const client = getRekognitionClient();
+
     // First detect text in the document
-    const textDetectionResult = await rekognition.detectText(params).promise();
-    
+    const detectTextCommand = new DetectTextCommand({
+      Image: {
+        Bytes: imageBuffer,
+      },
+    });
+
     // Then analyze the document
-    const documentResult = await rekognition.analyzeID(params).promise();
-    
+    const analyzeIDCommand = new AnalyzeIDCommand({
+      Image: {
+        Bytes: imageBuffer,
+      },
+    });
+
+    const [textDetectionResult, documentResult] = await Promise.all([
+      client.send(detectTextCommand),
+      client.send(analyzeIDCommand),
+    ]);
+
     return {
       textDetection: textDetectionResult,
-      documentAnalysis: documentResult
+      documentAnalysis: documentResult,
     };
   } catch (error) {
-    console.error('Error analyzing ID document:', error);
+    console.error("Error analyzing ID document:", error);
     throw error;
   }
 };
@@ -107,19 +116,19 @@ export const analyzeIDDocument = async (imageBuffer) => {
  */
 export const checkWatchlist = async (imageBuffer, projectVersionArn) => {
   try {
-    const rekognition = getRekognitionClient();
-    
-    const params = {
+    const client = getRekognitionClient();
+
+    const command = new DetectCustomLabelsCommand({
       Image: {
-        Bytes: imageBuffer
+        Bytes: imageBuffer,
       },
       ProjectVersionArn: projectVersionArn,
-      MinConfidence: 80 // Minimum confidence threshold (0-100)
-    };
-    
-    return await rekognition.detectCustomLabels(params).promise();
+      MinConfidence: 80, // Minimum confidence threshold (0-100)
+    });
+
+    return await client.send(command);
   } catch (error) {
-    console.error('Error checking watchlist:', error);
+    console.error("Error checking watchlist:", error);
     throw error;
   }
 };
@@ -128,5 +137,5 @@ export default {
   compareFaces,
   detectFaces,
   analyzeIDDocument,
-  checkWatchlist
+  checkWatchlist,
 };
