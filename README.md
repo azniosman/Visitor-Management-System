@@ -44,8 +44,10 @@ Elisa Secure Access is a comprehensive security management solution designed for
 ### Frontend
 
 - React 18+ with Material-UI
-- Progressive Web App (PWA) capabilities
+- Progressive Web App (PWA) capabilities with service worker support
 - Responsive design for mobile access
+- Vite for fast development and builds
+- Nginx for efficient static asset serving
 - Offline functionality
 
 ### Backend
@@ -54,16 +56,17 @@ Elisa Secure Access is a comprehensive security management solution designed for
 - MongoDB for data persistence
 - JWT-based authentication
 - RESTful API architecture
+- AWS SDK v3 for improved performance and modular imports
 
 ### AI Services
 
-- AWS Rekognition for facial processing
-- AWS Comprehend for text analysis
+- AWS Rekognition for facial processing (using AWS SDK v3)
+- AWS Comprehend for text analysis (using AWS SDK v3)
 - Custom ML models for anomaly detection
 
 ### Infrastructure
 
-- Docker containerization
+- Docker containerization with multi-stage builds
 - GitHub Actions for CI/CD
 - AWS cloud infrastructure
 - Horizontal scaling capability
@@ -101,9 +104,9 @@ Elisa Secure Access is a comprehensive security management solution designed for
    ```
 
 4. Access the application:
-   - Frontend: http://localhost:5173
+   - Frontend: http://localhost
    - API: http://localhost:3000/api
-   - Swagger Documentation: http://localhost:3000/api-docs
+   - API Documentation: http://localhost:3000/api/docs
 
 ### Testing
 
@@ -131,7 +134,7 @@ npm run test:e2e
 
 2. Deploy:
    ```bash
-   docker-compose -f docker-compose.prod.yml up -d
+   NODE_ENV=production docker-compose up -d
    ```
 
 ### CI/CD Pipeline
@@ -152,6 +155,38 @@ npm run test:e2e
    git push origin v1.0.0
    ```
 
+## Docker Configuration
+
+The project uses a Docker-based development and production setup with the following components:
+
+### MongoDB Service
+
+- MongoDB 6.0 with proper health checks
+- Data persistence through Docker volumes
+- Authentication enabled
+
+### Backend API Service
+
+- Multi-stage Dockerfile with development and production stages
+- Development stage with hot-reloading via nodemon
+- Production stage with optimized build and security hardening
+- Health checks to ensure API availability
+
+### Frontend Service
+
+- Multi-stage build process with Nginx for serving static assets
+- Development build with Nginx for consistent environment
+- Production optimization for smaller bundle sizes and better performance
+
+## AWS SDK v3 Integration
+
+The project has been migrated from AWS SDK v2 to v3, which provides:
+
+- Modular imports for smaller bundle sizes
+- Improved performance and reduced memory footprint
+- Better TypeScript support
+- Middleware-based architecture for custom request handling
+
 ## Common Troubleshooting
 
 ### Docker Issues
@@ -160,7 +195,9 @@ npm run test:e2e
 
    ```bash
    # Check container logs
-   docker-compose logs
+   docker logs api
+   docker logs frontend
+   docker logs mongodb
 
    # Rebuild containers
    docker-compose down
@@ -175,11 +212,11 @@ npm run test:e2e
    NODE_ENV=development docker-compose up -d
    ```
 
-3. Test failures in container:
+3. Frontend build issues:
    ```bash
-   # Install dependencies first
-   docker-compose exec api npm ci
-   docker-compose exec frontend npm ci
+   # Rebuild only the frontend container
+   NODE_ENV=development docker-compose build frontend
+   docker-compose up -d frontend
    ```
 
 ### Database Issues
@@ -191,14 +228,14 @@ npm run test:e2e
    docker-compose ps mongodb
 
    # Check MongoDB logs
-   docker-compose logs mongodb
+   docker logs mongodb
    ```
 
 2. Data persistence issues:
    ```bash
    # Verify volume mounts
    docker volume ls
-   docker volume inspect elisa-secure-access_mongodb-data
+   docker volume inspect visitor-management-system_mongo-data
    ```
 
 ### AWS Integration
@@ -217,7 +254,7 @@ npm run test:e2e
 ## Project Structure
 
 ```
-elisa-secure-access/
+visitor-management-system/
 ├── api/                  # Backend API
 │   ├── src/             # Source code
 │   ├── tests/           # Test files
@@ -225,11 +262,14 @@ elisa-secure-access/
 ├── elisa-secure-access/ # Frontend application
 │   ├── public/          # Public assets
 │   ├── src/             # Source code
+│   │   ├── components/  # React components
+│   │   ├── contexts/    # Context providers
+│   │   ├── services/    # API services
+│   │   └── hooks/       # Custom hooks
+│   ├── nginx.conf       # Nginx configuration
 │   └── Dockerfile       # Frontend Docker configuration
-├── scripts/             # Utility scripts
-├── .github/             # GitHub Actions workflows
-├── docker-compose.yml   # Development Docker Compose
-└── docker-compose.prod.yml # Production Docker Compose
+├── docker-compose.yml   # Docker Compose configuration
+└── .env                 # Environment variables
 ```
 
 ## Support
