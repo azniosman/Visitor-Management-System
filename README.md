@@ -1,31 +1,82 @@
 # Elisa Secure Access
 
-AI-powered Visitor Management System with modules for Visitor Management, Shipment Tracking, and Key Management.
+Enterprise-grade Visitor Management System with integrated AI capabilities for Visitor Management, Shipment Tracking, and Key Management.
 
-## Features
+## Overview
 
-- Visitor Management: Check-in, check-out, photo capture, and watchlist checking
-- Shipment Tracking: Package receipt, delivery tracking, and notifications
-- Key Management: Key checkout, return tracking, and access control
-- AI-powered features: Facial recognition, sentiment analysis, and anomaly detection
-- Progressive Web App (PWA) for mobile and offline access
-- Containerized deployment with Docker
+Elisa Secure Access is a comprehensive security management solution designed for modern enterprises. It leverages artificial intelligence to provide advanced security features while maintaining an intuitive user experience.
 
-## Tech Stack
+## Core Features
 
-- **Frontend**: React, Material-UI, Progressive Web App (PWA)
-- **Backend**: Node.js, Express, MongoDB
-- **AI Services**: AWS Rekognition, AWS Comprehend
-- **Deployment**: Docker, GitHub Actions
+### Visitor Management
+
+- Automated check-in/check-out process
+- Real-time watchlist screening
+- Biometric verification with photo capture
+- Digital visitor badges
+- Host notification system
+
+### Shipment Tracking
+
+- End-to-end package tracking
+- Chain of custody management
+- Automated recipient notifications
+- Integration with major courier services
+- QR code-based tracking
+
+### Key Management
+
+- Digital key checkout system
+- Access level management
+- Return tracking automation
+- Usage analytics and reporting
+- Emergency access protocols
+
+### AI Capabilities
+
+- Facial recognition (AWS Rekognition)
+- Sentiment analysis for threat detection
+- Behavioral anomaly detection
+- Real-time alert system
+
+## Technical Architecture
+
+### Frontend
+
+- React 18+ with Material-UI
+- Progressive Web App (PWA) capabilities
+- Responsive design for mobile access
+- Offline functionality
+
+### Backend
+
+- Node.js (18+) with Express
+- MongoDB for data persistence
+- JWT-based authentication
+- RESTful API architecture
+
+### AI Services
+
+- AWS Rekognition for facial processing
+- AWS Comprehend for text analysis
+- Custom ML models for anomaly detection
+
+### Infrastructure
+
+- Docker containerization
+- GitHub Actions for CI/CD
+- AWS cloud infrastructure
+- Horizontal scaling capability
 
 ## Development Setup
 
 ### Prerequisites
 
 - Node.js 18+
-- Docker and Docker Compose
-- MongoDB (or use the Docker Compose setup)
-- AWS Account (for AI services)
+- Docker Engine 20.10+
+- Docker Compose 2.0+
+- MongoDB 6.0+ (optional if using Docker)
+- AWS Account with appropriate permissions
 
 ### Local Development
 
@@ -36,104 +87,159 @@ AI-powered Visitor Management System with modules for Visitor Management, Shipme
    cd elisa-secure-access
    ```
 
-2. Set up environment variables:
+2. Configure environment:
 
    ```bash
    cp .env.development .env
    # Edit .env with your configuration
    ```
 
-3. Start the development environment:
+3. Start development environment:
 
    ```bash
-   docker-compose up -d
+   NODE_ENV=development docker-compose up -d
    ```
 
 4. Access the application:
    - Frontend: http://localhost:5173
    - API: http://localhost:3000/api
+   - Swagger Documentation: http://localhost:3000/api-docs
 
-### Running Tests
+### Testing
 
 ```bash
 # Backend tests
-cd api
-npm test
+cd api && npm test
 
 # Frontend tests
-cd elisa-secure-access
-npm test
+cd elisa-secure-access && npm test
+
+# E2E tests
+npm run test:e2e
 ```
 
 ## Production Deployment
 
-### Using Docker Compose
+### Docker Compose Deployment
 
-1. Set up environment variables:
+1. Configure production environment:
 
    ```bash
    cp .env.production .env
-   # Edit .env with your production configuration
+   # Configure production settings
    ```
 
-2. Start the production environment:
+2. Deploy:
    ```bash
    docker-compose -f docker-compose.prod.yml up -d
    ```
 
-### Using CI/CD Pipeline
+### CI/CD Pipeline
 
-1. Set up the following secrets in your GitHub repository:
+1. Configure repository secrets:
 
-   - `DOCKERHUB_USERNAME`: Your Docker Hub username
-   - `DOCKERHUB_TOKEN`: Your Docker Hub access token
-   - `SSH_HOST`: Your production server hostname
-   - `SSH_USERNAME`: Your production server username
-   - `SSH_PRIVATE_KEY`: Your SSH private key for the production server
+   - `DOCKERHUB_USERNAME`
+   - `DOCKERHUB_TOKEN`
+   - `SSH_HOST`
+   - `SSH_USERNAME`
+   - `SSH_PRIVATE_KEY`
+   - `AWS_ACCESS_KEY_ID`
+   - `AWS_SECRET_ACCESS_KEY`
 
-2. Push to the main branch or create a tag to trigger deployment:
+2. Trigger deployment:
    ```bash
    git tag v1.0.0
    git push origin v1.0.0
    ```
 
-## Directory Structure
+## Common Troubleshooting
+
+### Docker Issues
+
+1. Container fails to start:
+
+   ```bash
+   # Check container logs
+   docker-compose logs
+
+   # Rebuild containers
+   docker-compose down
+   docker-compose build --no-cache
+   docker-compose up -d
+   ```
+
+2. Development stage not found:
+
+   ```bash
+   # Ensure NODE_ENV is set
+   NODE_ENV=development docker-compose up -d
+   ```
+
+3. Test failures in container:
+   ```bash
+   # Install dependencies first
+   docker-compose exec api npm ci
+   docker-compose exec frontend npm ci
+   ```
+
+### Database Issues
+
+1. MongoDB connection failures:
+
+   ```bash
+   # Verify MongoDB is running
+   docker-compose ps mongodb
+
+   # Check MongoDB logs
+   docker-compose logs mongodb
+   ```
+
+2. Data persistence issues:
+   ```bash
+   # Verify volume mounts
+   docker volume ls
+   docker volume inspect elisa-secure-access_mongodb-data
+   ```
+
+### AWS Integration
+
+1. AI service failures:
+
+   - Verify AWS credentials in `.env`
+   - Check IAM permissions
+   - Ensure correct AWS region configuration
+
+2. Rate limiting:
+   - Monitor AWS CloudWatch metrics
+   - Implement request throttling
+   - Check service quotas
+
+## Project Structure
 
 ```
 elisa-secure-access/
 ├── api/                  # Backend API
-│   ├── src/              # Source code
-│   ├── tests/            # Test files
-│   └── Dockerfile        # Backend Docker configuration
-├── elisa-secure-access/  # Frontend application
-│   ├── public/           # Public assets
-│   ├── src/              # Source code
-│   └── Dockerfile        # Frontend Docker configuration
-├── scripts/              # Utility scripts
-├── .github/              # GitHub Actions workflows
-├── docker-compose.yml    # Development Docker Compose
+│   ├── src/             # Source code
+│   ├── tests/           # Test files
+│   └── Dockerfile       # Backend Docker configuration
+├── elisa-secure-access/ # Frontend application
+│   ├── public/          # Public assets
+│   ├── src/             # Source code
+│   └── Dockerfile       # Frontend Docker configuration
+├── scripts/             # Utility scripts
+├── .github/             # GitHub Actions workflows
+├── docker-compose.yml   # Development Docker Compose
 └── docker-compose.prod.yml # Production Docker Compose
 ```
 
-## Environment Variables
+## Support
 
-### Backend (.env)
+For technical support:
 
-- `MONGO_DATABASE`: MongoDB database name
-- `MONGO_USERNAME`: MongoDB username
-- `MONGO_PASSWORD`: MongoDB password
-- `JWT_SECRET`: Secret for JWT token generation
-- `JWT_EXPIRES_IN`: JWT token expiration time
-- `EMAIL_*`: Email configuration
-- `AWS_*`: AWS configuration
-
-### Frontend (.env)
-
-- `VITE_API_URL`: Backend API URL
-- `VITE_AWS_REGION`: AWS region
-- `VITE_AWS_ACCESS_KEY_ID`: AWS access key
-- `VITE_AWS_SECRET_ACCESS_KEY`: AWS secret key
+- Create an issue in the GitHub repository
+- Contact the development team
+- Check documentation in the `/docs` directory
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
