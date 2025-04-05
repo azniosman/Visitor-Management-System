@@ -1,0 +1,101 @@
+version: "3.8"
+
+services:
+  # MongoDB service
+  mongo:
+    image: mongo:6
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE:-elisa-secure-access}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-password}
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API service
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      target: ${NODE_ENV:-development}
+    container_name: api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./api:/app
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=3000
+      - MONGODB_URI=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-password}@mongo:27017/${MONGO_DATABASE:-elisa-secure-access}?authSource=admin
+      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_key}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-1h}
+      - EMAIL_HOST=${EMAIL_HOST:-smtp.example.com}
+      - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_SECURE=${EMAIL_SECURE:-false}
+      - EMAIL_USERNAME=${EMAIL_USERNAME:-user}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD:-password}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-Elisa Secure Access}
+      - EMAIL_FROM_ADDRESS=${EMAIL_FROM_ADDRESS:-noreply@example.com}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/api/health",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Frontend service
+  frontend:
+    build:
+      context: ./elisa-secure-access
+      dockerfile: Dockerfile
+      target: ${NODE_ENV:-development}
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./elisa-secure-access:/app
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - VITE_API_URL=${API_URL:-http://localhost:3000/api}
+      - VITE_AWS_REGION=${AWS_REGION:-us-east-1}
+      - VITE_AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - VITE_AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo-data:

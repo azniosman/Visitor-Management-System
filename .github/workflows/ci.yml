@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:6
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_DATABASE: elisa_secure_access_test
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: api/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./api
+        run: npm ci
+      
+      - name: Run linting
+        working-directory: ./api
+        run: npm run lint
+      
+      - name: Run tests
+        working-directory: ./api
+        run: npm test
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://localhost:27017/elisa_secure_access_test
+          JWT_SECRET: test_jwt_secret
+  
+  test-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: elisa-secure-access/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./elisa-secure-access
+        run: npm ci
+      
+      - name: Run linting
+        working-directory: ./elisa-secure-access
+        run: npm run lint
+      
+      - name: Run tests
+        working-directory: ./elisa-secure-access
+        run: npm test
+        env:
+          NODE_ENV: test
+  
+  build:
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Build API Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./api
+          push: false
+          tags: elisa-secure-access-api:latest
+          target: production
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Build Frontend Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./elisa-secure-access
+          push: false
+          tags: elisa-secure-access-frontend:latest
+          target: production
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
