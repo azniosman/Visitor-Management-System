@@ -18,6 +18,24 @@ COPY . .
 # Run tests
 RUN npm test
 
+# ---- Development Stage ----
+FROM base as development
+
+# Install all dependencies including devDependencies for hot-reloading
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Expose the port the app runs on
+EXPOSE 3000
+
+# Set NODE_ENV to development
+ENV NODE_ENV=development
+
+# Command to run the application with nodemon for hot-reloading
+CMD ["npx", "nodemon", "src/index.js"]
+
 # ---- Production Stage ----
 FROM base as production
 
