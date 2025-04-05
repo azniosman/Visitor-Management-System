@@ -6,6 +6,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
+# Install MongoDB client tools for database setup
+RUN apk add --no-cache mongodb-tools
+
 # ---- Build/Test Stage ----
 FROM base as build
 
@@ -61,3 +64,8 @@ ENV NODE_ENV=production
 
 # Command to run the application
 CMD ["node", "src/index.js"]
+
+# Make our setup script executable
+RUN chmod +x /app/setup.sh
+
+CMD ["npm", "run", "dev"]
